@@ -25,7 +25,7 @@ Resources:
   SshSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: SSH restricted to the user's IPv4 address
+      GroupDescription: SSH access restricted to a single IPv4 address
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
