@@ -21,7 +21,7 @@ ISUCON13の[公開AMI](https://github.com/isucon/isucon13)を使って、AWSにE
 | 項目 | 設定 |
 | --- | --- |
 | リージョン | 東京 ap-northeast-1 |
-| AMI | ami-041289d910c114864（利用可否は要確認） |
+| AMI | パラメータ `AmiId` に利用可能なISUCON13用AMIを明示指定 |
 | インスタンス | t3.medium（2 vCPU / 4GiB、CPUクレジット standard） |
 | 比較用 | c5.largeに切り替え可能 |
 | EBS | gp3 30GiB、暗号化、インスタンス終了時に削除 |
@@ -30,6 +30,9 @@ ISUCON13の[公開AMI](https://github.com/isucon/isucon13)を使って、AWSにE
 
 > [!WARNING]
 > **AWSで費用が発生します。** EC2、EBS、パブリックIPv4等は課金対象です。CloudFormationスタックを削除して関連リソースが消えたことを確認してください。AWS Budgetsによる予算アラートも推奨します（課金は自動停止されません）。
+
+> [!IMPORTANT]
+> 公式公開AMI `ami-041289d910c114864` は現在のアカウントから参照できない場合があります。東京リージョンのAMI一覧で確認し、見つからない場合は公式のPacker手順でAMIを自作してから `AmiId` に指定してください。詳しくは[構築手順](docs/setup.md#amiが見つからない場合最初に確認)。
 
 > [!NOTE]
 > このテンプレートは独自の学習用構成で、公式のCloudFormationテンプレートではありません。AWSアカウント上での起動検証は未実施です。

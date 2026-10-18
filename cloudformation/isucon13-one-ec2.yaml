@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Single EC2 ISUCON13 practice environment (Tokyo region)
 Parameters:
+  AmiId:
+    Type: AWS::EC2::Image::Id
+    Description: Verified AMI ID available to your AWS account in ap-northeast-1 (build one if the old public AMI is unavailable)
   VpcId:
     Type: AWS::EC2::VPC::Id
   SubnetId:
@@ -35,7 +38,7 @@ Resources:
   PracticeInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-041289d910c114864
+      ImageId: !Ref AmiId
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       CreditSpecification:

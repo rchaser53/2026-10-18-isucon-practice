@@ -9,6 +9,14 @@
 
 事前に[料金と片付け](cleanup.md)を読み、予算アラートも設定してください。
 
+## AMIが見つからない場合（最初に確認）
+
+公式READMEに記載された `ami-041289d910c114864` は、公開終了などにより現在利用できない場合があります。まず東京リージョンのEC2コンソール「AMI」→「パブリックイメージ」で検索してください。見つからなければ同じIDを繰り返し指定してもデプロイできません。
+
+公式の代替手段は [ISUCON13 provisioning/packer](https://github.com/isucon/isucon13/tree/main/provisioning/packer) にある `make build` でAMIを自作することです。PackerとAnsibleのビルドには追加の計算リソース・時間・費用が必要です。完了後、そのアカウント・東京リージョンに作成されたAMI IDをスタックの `AmiId` に指定します。**別の無関係なUbuntu AMIを指定してもISUCONアプリは入りません。**
+
+AWS上でAMIを確認・自作できるまではスタックの作成を進めないでください。
+
 ## 1. SSHキーペアの作成
 
 [EC2コンソール](https://console.aws.amazon.com/ec2/)で東京リージョンを選択。「キーペア」→「作成」から、名前 `isucon-practice-key`、タイプ RSA、形式 PEM で作ります。
@@ -38,6 +46,7 @@ chmod 400 ~/.ssh/isucon-practice-key.pem
 
 | パラメータ | 値 |
 | --- | --- |
+| AmiId | 東京リージョンで参照できるISUCON13用AMI ID（必須） |
 | VpcId | 既存VPCのID |
 | SubnetId | 対象VPCのパブリックサブネット |
 | KeyName | isucon-practice-key |
