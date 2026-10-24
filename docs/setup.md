@@ -97,4 +97,4 @@ sudo ss -lntp
 
 ベンチマーカーはこの1台の構成には含まれません。本番同等の負荷試験には別途環境が必要です。
 
-WorkからEC2に指示して計測・改善する場合は、[WorkのSSH接続とパフォーマンス計測・改善](work-performance.md)へ進んでください。
+MacのChatGPTアプリからEC2に指示して計測・改善する場合は、[MacのChatGPTアプリからのSSH接続と計測・改善](work-performance.md)へ進んでください。
