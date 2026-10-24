@@ -1,41 +1,28 @@
-# ISUCON13 練習環境：CloudFormationでEC2を1台起動する
+# ISUCON14 練習環境：競技用3台＋ベンチ用1台
 
-ISUCON13の[公開AMI](https://github.com/isucon/isucon13)を使って、AWSにEC2インスタンスを**1台だけ**起動する学習用構成です。運営の3台構成や外部ベンチマーカーを完全再現するものではありません。
+[公式ISUCON14 AMI](https://github.com/isucon/isucon14)を使い、CloudFormationで東京リージョンに競技用EC2を3台、独立したベンチ用EC2を1台作成します。
 
-- [構成と仕組み](docs/architecture.md)
-- [構築・SSH接続手順](docs/setup.md)
-- [MacのChatGPTアプリからEC2を計測・改善](docs/work-performance.md)
-- [課金と削除手順](docs/cleanup.md)
-- [CloudFormationテンプレート](cloudformation/isucon13-one-ec2.yaml)
-
-## 構成
-
-```text
-自分のPC ── SSH:22（自分のIPv4アドレスのみ）── EC2 × 1
-                                            ├─ ISUCON13公開AMI
-                                            ├─ Nginx / Webアプリ / MySQL
-                                            └─ EBS gp3 30GiB
-
-既存のVPCとインターネット接続可能なサブネットを利用
-```
+2026-10-24確認：最新開催の[ISUCON2026は10月31日予定](https://isucon.net/archives/59917350.html)です。公開済みの公式問題・AMIで練習するためISUCON14を採用します。ISUCON2026の競技環境を再現するものではありません。
 
 | 項目 | 設定 |
 | --- | --- |
-| リージョン | 東京 ap-northeast-1 |
-| AMI | パラメータ `AmiId` に利用可能なISUCON13用AMIを明示指定 |
-| インスタンス | t3.medium（2 vCPU / 4GiB、CPUクレジット standard） |
-| 比較用 | c5.largeに切り替え可能 |
-| EBS | gp3 30GiB、暗号化、インスタンス終了時に削除 |
-| 公開ポート | SSH 22のみ。接続元IPを /32 で制限 |
-| 作らないリソース | NAT Gateway、Elastic IP、新規VPC、ベンチマーカー |
+| リージョン | ap-northeast-1（東京のみ） |
+| 競技用AMI | 公式 `ami-0e334c50145a3ee41`（AmiIdで変更可能） |
+| 競技用VM | c5.large × 3（各2 vCPU / 4GiB） |
+| 競技用ディスク | 各EBS gp3 20GiB、暗号化、終了時削除 |
+| ベンチ用VM | c5.2xlarge × 1（8 vCPU / 16GiB）、gp3 30GiB |
+| ベンチ用OS | Canonical公式Ubuntu 24.04 amd64、SSM公開パラメータから取得 |
+| ネットワーク | 既存VPCの同一パブリックサブネット、内部通信はプライベートIP |
+| 外部公開 | 自分のIPv4 /32からSSH、競技用へのHTTPS |
 
-> [!WARNING]
-> **AWSで費用が発生します。** EC2、EBS、パブリックIPv4等は課金対象です。CloudFormationスタックを削除して関連リソースが消えたことを確認してください。AWS Budgetsによる予算アラートも推奨します（課金は自動停止されません）。
+本番の競技用VMの台数・種類・ディスク容量を合わせています。公式READMEのベンチ環境はECS Fargate（8 vCPU / 8GBと記載）ですが、この構成ではSSHで扱えるEC2を使用します。メモリ・実行基盤・ネットワークやスコアは完全一致しません。3台への負荷分散やDB分離は初期状態で設定せず、競技と同様に自分でチューニングします。
 
-> [!IMPORTANT]
-> 公式公開AMI `ami-041289d910c114864` は現在のアカウントから参照できない場合があります。東京リージョンのAMI一覧で確認し、見つからない場合は公式のPacker手順でAMIを自作してから `AmiId` に指定してください。詳しくは[構築手順](docs/setup.md#amiが見つからない場合最初に確認)。
+- [構成と本番との差](docs/architecture.md)
+- [構築・SSH・ベンチ実行手順](docs/setup.md)
+- [Macからの計測・改善](docs/work-performance.md)
+- [課金と削除](docs/cleanup.md)
+- [CloudFormationテンプレート](cloudformation/isucon14-practice.yaml)
 
-> [!NOTE]
-> このテンプレートは独自の学習用構成で、公式のCloudFormationテンプレートではありません。AWSアカウント上での起動検証は未実施です。
+EC2 4台・EBS合計90GiB・パブリックIPv4 4個などの費用が発生します。既存のISUCON13スタックは更新せず、新しいスタックで作成してください。削除前に必要なコードやデータを退避してください。
 
-公式資料：[ISUCON13](https://github.com/isucon/isucon13) / [CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html)
+テンプレートは独自の練習用です。公式AMIの共有は予告なく終了する可能性があります。AWS上でのAMI参照・起動・ベンチ実行は未検証です。

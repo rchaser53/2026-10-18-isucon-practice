@@ -7,7 +7,7 @@
 | MacのChatGPTアプリ（Work） | 指示、結果確認、追加指示 |
 | Macのローカルシェル | MacにあるSSH設定と鍵でEC2に接続 |
 | EC2 | アプリ編集、サービス操作、ログ取得 |
-| ベンチホスト | ベンチ実行と結果保存（別途準備） |
+| ベンチホスト（isucon-bench） | ベンチ実行と結果保存（構築手順でビルド） |
 
 操作はMacアプリの同じWorkチャットで続けます。この手順では、Web版との実行環境の共有、Work Cloudの管理設定、MCPやプラグインの追加は必要ありません。EC2にCodex CLIを導入する必要もありません。
 
@@ -24,7 +24,7 @@
 
 ## 2. MacからEC2へのSSHを準備する
 
-[設定例](../config/ssh_config.example)を確認し、PCの `~/.ssh/config` に追記します。ファイル全体を上書きせず、HostNameをCloudFormation出力のPublicIpに置き換えてください。MacのOpenSSHを使う例です。
+[設定例](../config/ssh_config.example)を確認し、PCの `~/.ssh/config` に追記します。ファイル全体を上書きせず、HostNameをCloudFormation出力のApp1PublicIpに置き換えてください。MacのOpenSSHを使う例です。
 
 ```bash
 chmod 600 ~/.ssh/config
@@ -62,7 +62,7 @@ ssh isucon-practice 'cd ~/isucon-practice && git status --short'
 ssh isucon-practice 'systemctl --type=service --state=running'
 ```
 
-cloneはEC2にまだ配置されていない場合に実行します。PRのマージ前に試す場合は、clone後にEC2で `git switch feat/work-ssh-performance` を実行してください。
+cloneはEC2にまだ配置されていない場合に実行します。PRのマージ前は対象PRのブランチを指定してください。
 
 実際のISUCONアプリは別ディレクトリです。場所・所有者を調査し、適切なユーザーでファイル編集・サービス操作を行います。ubuntuでSSH接続した場合、別ターミナルの `sudo su - isucon` は後続のSSHコマンドの実行ユーザーを変えません。必要なコマンドだけ適切なユーザーで実行し、アプリ全体の所有者変更や権限緩和は行いません。
 
@@ -70,7 +70,7 @@ cloneはEC2にまだ配置されていない場合に実行します。PRのマ�
 
 ## 4. ベンチの準備と記録
 
-このCloudFormationはアプリ用EC2を1台だけ作り、ベンチマーカーやそのネットワーク設定は作りません。[ISUCON13公式資料](https://github.com/isucon/isucon13)に従い、ベンチ環境・初期化方法・接続先を別途確認してください。実在しないベンチコマンドを固定していません。
+このCloudFormationは競技用3台とベンチ用1台、サーバー間通信の設定を作ります。[構築手順](setup.md)でベンチをビルドし、PCから `ssh isucon-bench` で実行します。競技用は `isucon-app1` / `isucon-app2` / `isucon-app3` を使い分け、`isucon-practice` はApp1の別名です。
 
 ベンチホストにもこのリポジトリを配置し、実際のベンチディレクトリから以下を実行します。WorkからはPCのSSHでそのベンチホストに接続して実行してください。SSHの終了コードとベンチのログは両方確認します。`/absolute/path/to/bench` と引数は実環境のコマンドに置き換えます。
 
@@ -99,7 +99,7 @@ Linux、Bash、util-linuxのflockが必要です。スクリプトはコマン�
 4. 根拠のある仮説を1つ選び、変更、デプロイ、同条件で再計測する。悪化時はその変更だけ戻す。
 5. 最終設定でサービス・EC2を再起動し、起動とベンチ成功を確認する。
 
-t3.mediumはCPUクレジットによって性能が変わります。既存の[構成説明](architecture.md)も確認し、クレジット残量やインスタンスタイプを比較記録に含めてください。同じEC2上でベンチを動かすとリソースを奪い合うため、別ホストの結果と直接比較できません。
+競技用は本番と同じc5.largeです。[構成説明](architecture.md)の本番との差も確認し、負荷先・台ごとの役割・インスタンスタイプを比較記録に含めてください。同じEC2上でベンチを動かすとリソースを奪い合うため、別ホストの結果と直接比較できません。
 
 比較記録には、日時、アプリのコミット、差分、ベンチ実行先・コマンド、データ初期化条件、計測設定、スコア、エラー、採用・却下の判断を残します。ログにはユーザーデータや認証情報が含まれ得るため、resultsはGit対象外にしています。設定変更前のバックアップも公開リポジトリには置かないでください。
 
