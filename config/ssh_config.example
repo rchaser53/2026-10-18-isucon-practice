@@ -1,0 +1,9 @@
+# PCの ~/.ssh/config に追記。接続元IPv4はCloudFormationのMyIpCidrに合わせる。
+# HostNameをスタック出力PublicIpに変更。停止・起動後は再確認。
+Host isucon-practice
+    HostName REPLACE_WITH_PUBLIC_IP
+    User ubuntu
+    IdentityFile ~/.ssh/isucon-practice-key.pem
+    IdentitiesOnly yes
+    ServerAliveInterval 30
+    ServerAliveCountMax 3

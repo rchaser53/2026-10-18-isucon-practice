@@ -1,0 +1,8 @@
+# 接続情報・認証情報・計測結果
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+/config/ssh_config.local
+/results/
