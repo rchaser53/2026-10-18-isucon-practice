@@ -7,7 +7,7 @@
 | MacのChatGPTアプリ（Work） | 指示、結果確認、追加指示 |
 | Macのローカルシェル | MacにあるSSH設定と鍵でEC2に接続 |
 | EC2 | アプリ編集、サービス操作、ログ取得 |
-| ベンチホスト（isucon-bench） | ベンチ実行と結果保存（構築手順でビルド） |
+| ベンチホスト（isucon-bench） | ベンチ実行と結果保存（公式AMI同梱） |
 
 操作はMacアプリの同じWorkチャットで続けます。この手順では、Web版との実行環境の共有、Work Cloudの管理設定、MCPやプラグインの追加は必要ありません。EC2にCodex CLIを導入する必要もありません。
 
@@ -70,7 +70,7 @@ cloneはEC2にまだ配置されていない場合に実行します。PRのマ�
 
 ## 4. ベンチの準備と記録
 
-このCloudFormationは競技用3台とベンチ用1台、サーバー間通信の設定を作ります。[構築手順](setup.md)でベンチをビルドし、PCから `ssh isucon-bench` で実行します。競技用は `isucon-app1` / `isucon-app2` / `isucon-app3` を使い分け、`isucon-practice` はApp1の別名です。
+このCloudFormationは競技用3台とベンチ用1台、サーバー間通信の設定を作ります。[構築手順](setup.md)で同梱ベンチを確認し、PCから `ssh isucon-bench` で実行します。競技用は `isucon-app1` / `isucon-app2` / `isucon-app3` を使い分け、`isucon-practice` はApp1の別名です。
 
 ベンチホストにもこのリポジトリを配置し、実際のベンチディレクトリから以下を実行します。WorkからはPCのSSHでそのベンチホストに接続して実行してください。SSHの終了コードとベンチのログは両方確認します。`/absolute/path/to/bench` と引数は実環境のコマンドに置き換えます。
 
