@@ -1,58 +1,85 @@
-# WorkからEC2を操作し、計測・改善する
+# chatgpt.comのWorkからPCを経由してEC2を計測・改善する
 
-この手順は[構築・SSH接続](setup.md)の完了後に行います。PCのChatGPTデスクトップアプリからSSHホストを登録し、EC2のファイルとシェルに対して指示します。クラウド上の通常のチャットにIPを伝えるだけでは接続されません。
+[構築・SSH接続](setup.md)の完了後に使う手順です。日常の指示・結果確認はブラウザのchatgpt.comで行い、起動したPCのシェルからSSHでEC2を操作します。
 
-## 1. PCで接続設定
+| 場所 | 役割 |
+| --- | --- |
+| chatgpt.comのWork | 指示、結果確認、追加指示 |
+| 接続した自分のPC | ChatGPTデスクトップアプリを起動し、ローカルのSSHクライアントと鍵で接続 |
+| EC2 | アプリ編集、サービス操作、ログ取得 |
+| ベンチホスト | ベンチ実行と結果保存（別途準備） |
 
-[設定例](../config/ssh_config.example)を確認し、PCの `~/.ssh/config` に追記します。ファイル全体を上書きせず、HostNameをCloudFormation出力のPublicIpに置き換えてください。
+公式の「Work Cloudのローカルコンピューターアクセス」を利用する構成です。SSH操作はそのローカルシェルを利用する応用例で、PCの権限・ネットワーク設定を含む実機確認が必要です。このリポジトリだけでWorkの機能やPCとの接続が有効になるわけではありません。
+
+## 1. Work Cloudのローカルアクセスを有効にする
+
+最初にこの機能を利用できることを確認してください。利用可否はアカウント・ワークスペース・提供状況に依存し、このリポジトリからは確認できません。
+
+組織ワークスペースの公式手順：
+
+1. ワークスペース所有者が **Admin Console → Permissions** で対象ユーザーの **Work Cloud** を有効にする。
+2. その配下の **Allow local computer access** を有効にする。
+3. PCのChatGPTデスクトップアプリを最新版に更新する（公式資料の最低バージョンは26.929）。
+4. 対象のChatGPTアカウント・ワークスペースでサインインする。
+
+項目がない場合は、所有者に提供状況を確認します。個人アカウントに同じ管理画面があるとは限りません。APIキー、EC2へのCodex CLI導入、通常のSSHホスト登録だけでは、この機能は有効になりません。
+
+## 2. PCからEC2へのSSHを準備する
+
+[設定例](../config/ssh_config.example)を確認し、PCの `~/.ssh/config` に追記します。ファイル全体を上書きせず、HostNameをCloudFormation出力のPublicIpに置き換えてください。Mac / Linux等のOpenSSH環境の例です。WindowsではWorkから実行するシェルとSSH設定・鍵の置き場所を一致させてください。
 
 ```bash
 chmod 600 ~/.ssh/config
 ssh isucon-practice
 ```
 
-初回はホスト鍵の指紋を確認します。秘密鍵はPCに置いたまま使い、チャットやGitに貼り付けません。MyIpCidrはPCのグローバルIPv4 /32のままで利用でき、Work用の追加公開ポートは不要です。
-
-## 2. EC2にCodex CLIを用意
-
-SSH接続したubuntuユーザーで、[公式インストール手順](https://learn.chatgpt.com/docs/cli)に従ってCodex CLIをインストールし、`codex` を起動して認証します。以下は公式Linuxインストーラーの例です。実行前に内容を確認してください。
+初回はホスト鍵の指紋を確認します。鍵にパスフレーズがある場合はPCのssh-agent等で利用できる状態にし、次の非対話コマンドが成功することを確認します。
 
 ```bash
-curl -fsSL https://chatgpt.com/codex/install.sh -o /tmp/install-codex.sh
-less /tmp/install-codex.sh
-sh /tmp/install-codex.sh
-# インストーラーがPATHの追記を案内したら適用し、SSHに入り直す
-codex --version
-codex
+ssh -o BatchMode=yes -o ConnectTimeout=10 isucon-practice 'hostname; whoami; pwd'
 ```
 
-認証方法はCLIの案内に従います。EC2から配布先・認証先・モデルへのHTTPS通信が必要です。PCから次を実行し、ログインシェルのPATHも確認します。
+秘密鍵はPCに置いたまま使い、チャットやGitに貼り付けません。MyIpCidrはPCのグローバルIPv4 /32を指定し、追加公開ポートは不要です。PCがVPNを使う場合は実際の接続元IPも確認してください。
+
+PCのWork実行環境からSSHクライアント・鍵・SSH設定にアクセスでき、EC2へのTCP/22が許可されている必要があります。通常のターミナルで成功しても、Work側の権限や実行環境が異なる場合があるため、次の手順で確認します。
+
+## 3. デスクトップで新規タスクを開始し、Webで続ける
+
+1. 設定を有効にした後、PCのChatGPTデスクトップアプリで **Cloud** を選んで新しいWorkタスクを開始する。
+2. そのタスクでPCのシェルから `hostname` と `pwd` を実行し、自分のPC上で実行されることを確認する。
+3. PCのシェルから前節の非対話SSHコマンドを実行してもらい、EC2のホスト名・ユーザー・作業ディレクトリを確認する。
+4. 同じアカウント・ワークスペースの **chatgpt.comで同じタスク** を開き、もう一度SSHで確認してから計測・改善を指示する。
+
+既存のこの会話や、ローカルアクセス有効化前のタスクは自動的に切り替わりません。新しいタスクが必要です。PCをオンラインに保ち、スリープさせず、デスクトップアプリを起動・サインインしたままにします。PCが不在だとクラウド環境で会話だけ継続する場合がありますが、その環境にはPCのSSH設定や鍵はありません。
+
+この方式ではEC2にCodex CLIを入れる必要はありません。デスクトップの **Connections → SSH** でリモートプロジェクトを開く方式とは別の手順です。
+
+### 最初の接続確認の指示
+
+> 接続した私のPCのシェルを使ってください。まずhostnameとpwdを確認し、次にssh -o BatchMode=yes -o ConnectTimeout=10 isucon-practice 'hostname; whoami; pwd' を実行してください。
+> PCとEC2の結果を区別して報告してください。PCのシェルが利用できない場合は、その旨を報告してください。秘密鍵の内容は表示しないでください。
+
+### EC2での作業方法
+
+PCのシェルから、各コマンドを明示的にSSH経由で実行します。PCでの `cd` はEC2のディレクトリを変更しません。EC2上の作業ディレクトリはSSHコマンド内で指定します。
 
 ```bash
-ssh isucon-practice 'command -v codex && codex --version'
+ssh isucon-practice 'git clone https://github.com/rchaser53/2026-10-18-isucon-practice.git ~/isucon-practice'
+ssh isucon-practice 'cd ~/isucon-practice && git status --short'
+ssh isucon-practice 'systemctl --type=service --state=running'
 ```
 
-アプリはSSHユーザーのログインシェルを使ってリモートのCodex app serverを起動します。app serverをインターネットに直接公開しないでください。
+cloneはEC2にまだ配置されていない場合に実行します。PRのマージ前に試す場合は、clone後にEC2で `git switch feat/work-ssh-performance` を実行してください。
 
-## 3. リモートプロジェクトを開く
+実際のISUCONアプリは別ディレクトリです。場所・所有者を調査し、適切なユーザーでファイル編集・サービス操作を行います。ubuntuでSSH接続した場合、別ターミナルの `sudo su - isucon` は後続のSSHコマンドの実行ユーザーを変えません。必要なコマンドだけ適切なユーザーで実行し、アプリ全体の所有者変更や権限緩和は行いません。
 
-デスクトップアプリの **Settings → Connections → SSH** で `isucon-practice` を追加・有効化し、EC2の作業フォルダを選びます。表示・利用可否はアプリのバージョンや組織設定によって異なります。
-
-まずEC2にこのリポジトリをcloneしてください。
-
-```bash
-git clone https://github.com/rchaser53/2026-10-18-isucon-practice.git ~/isucon-practice
-```
-
-Workでは `/home/ubuntu/isucon-practice` を開き、アプリの実際の場所・所有者を調査します。ISUCONアプリは別ディレクトリにあるため、編集時は実際のアプリフォルダもプロジェクトとして開いてください。`sudo su - isucon` を別ターミナルで実行しても、Workの実行ユーザーは変わりません。まず `whoami` と `pwd` を確認し、サービス操作等は必要なコマンドに限ってsudoを使います。アプリ全体の所有者変更や権限緩和は行いません。
-
-接続が使えない場合は、SSH先でCodex CLIを起動して同じ手順を進められます。
+ログはSSHで取得し、ファイル転送が必要ならPCからscpを使えます。sudoが必要な操作は権限を確認し、対話入力が必要ならPCで対応してください。
 
 ## 4. ベンチの準備と記録
 
 このCloudFormationはアプリ用EC2を1台だけ作り、ベンチマーカーやそのネットワーク設定は作りません。[ISUCON13公式資料](https://github.com/isucon/isucon13)に従い、ベンチ環境・初期化方法・接続先を別途確認してください。実在しないベンチコマンドを固定していません。
 
-ベンチホストにもこのリポジトリを配置し、実際のベンチディレクトリから以下を実行します。`/absolute/path/to/bench` と引数は実環境のコマンドに置き換えます。
+ベンチホストにもこのリポジトリを配置し、実際のベンチディレクトリから以下を実行します。WorkからはPCのSSHでそのベンチホストに接続して実行してください。SSHの終了コードとベンチのログは両方確認します。`/absolute/path/to/bench` と引数は実環境のコマンドに置き換えます。
 
 ```bash
 bash ~/isucon-practice/scripts/benchmark.sh -- /absolute/path/to/bench <実際の引数>
@@ -85,18 +112,20 @@ t3.mediumはCPUクレジットによって性能が変わります。既存の[�
 
 ## 6. Workへの最初の指示例
 
-> このEC2のISUCON性能改善を進めてください。最初にwhoamiとpwd、サービス、アプリと設定の場所、ベンチ環境を調査し、実行手順を記録してください。
+> 接続したPCのシェルからSSHでisucon-practiceに接続し、EC2のISUCON性能改善を進めてください。毎回、ローカル実行とリモート実行を区別してください。最初にEC2でwhoamiとpwd、サービス、アプリと設定の場所、ベンチ環境を調査し、実行手順を記録してください。
 > ベンチ環境が未準備なら、その不足を明示してください。準備できたらベースラインとCPU・I/O・アクセスログ・スロークエリを測定し、根拠のある仮説を1つずつ検証してください。
 > アプリのコミットと変更差分、スコア、エラーを記録し、悪化した変更だけ戻してください。ベンチは同時実行せず、このリポジトリのscripts/benchmark.shを使ってください。
 > 計測設定を元に戻した後、再起動と最終ベンチで動作を確認してください。
 
 ## 接続で困ったとき
 
+- ローカルアクセスの設定項目がない：アプリを更新し、ワークスペース所有者に利用可否を確認。
+- WebからPCのシェルが使えない：機能有効化後にデスクトップでCloudを選んで作成した同じタスクか、同じアカウント・ワークスペースか、PCとアプリがオンラインか確認。
 - SSHが通らない：PublicIp、MyIpCidr、鍵、ubuntuユーザーを確認。EC2の停止・起動後はPublicIpが変わる場合があります。
-- SSHは通るがWorkに接続できない：ログインシェルでcodexがPATHにあるか、CLI認証、アプリのConnections設定を確認。
-- ファイルが書けない：実行ユーザーと所有者を確認し、適切なユーザー・プロジェクトで開く。
-- 画面にSSH設定がない：アプリを更新し、利用可能な機能・組織設定を確認。CLIからの作業も可能です。
+- ターミナルでは通るがWorkでは失敗：Workのシェル、SSH設定・鍵の場所、ssh-agent、ネットワークとファイル権限を確認。
+- ファイルが書けない：EC2上の実行ユーザーとファイル所有者を確認。
+- 長い計測が切れる：EC2側でtmux等を使って実行を継続し、再接続後に結果を確認。Workの会話が続いていても、SSHや計測プロセスの継続を保証するわけではありません。
 
-公式資料：[SSH接続](https://learn.chatgpt.com/docs/remote-connections#connect-to-an-ssh-host) / [Codex CLI](https://learn.chatgpt.com/docs/cli)
+公式資料：[Work Cloudのローカルアクセス](https://learn.chatgpt.com/docs/enterprise/cloud-local-access)
 
-本手順・スクリプトの実EC2 / Work接続・公式ベンチによる検証は未実施です。
+本手順の実PC / Work Cloud / EC2接続・公式ベンチによる検証は未実施です。

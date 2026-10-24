@@ -4,7 +4,7 @@ ISUCON13の[公開AMI](https://github.com/isucon/isucon13)を使って、AWSにE
 
 - [構成と仕組み](docs/architecture.md)
 - [構築・SSH接続手順](docs/setup.md)
-- [WorkのSSH接続とパフォーマンス計測・改善](docs/work-performance.md)
+- [Web版WorkからPCを経由してEC2を計測・改善](docs/work-performance.md)
 - [課金と削除手順](docs/cleanup.md)
 - [CloudFormationテンプレート](cloudformation/isucon13-one-ec2.yaml)
 
